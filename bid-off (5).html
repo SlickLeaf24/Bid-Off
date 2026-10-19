@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bid Off!</title>
+<style>
+:root{
+  --bg:#170B2E; --surface:#2A1B4D; --surface2:#3A2668;
+  --gold:#FFC857; --pink:#FF5D8F; --cyan:#5EE7FF; --text:#F5F1FF; --muted:#B8A9E0;
+}
+*{box-sizing:border-box;}
+html,body{height:100%;}
+body{margin:0;color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  min-height:100vh;overflow-x:hidden;position:relative;
+  background:linear-gradient(120deg,#170B2E,#2A1146,#0E1E3F,#2A1146);background-size:300% 300%;
+  animation:gradientMove 14s ease infinite;}
+@keyframes gradientMove{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+h1,h2,h3{margin:0;}
+.hidden{display:none !important;}
+button{font-family:inherit;cursor:pointer;border:none;}
+#fx{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0;}
+.spark{position:absolute;bottom:-40px;font-size:1.6rem;opacity:.7;animation:rise linear infinite;}
+@keyframes rise{to{transform:translateY(-110vh) rotate(360deg);opacity:0;}}
+.wrap{position:relative;z-index:1;}
+/* ---- START MENU ---- */
+#screen-start{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;}
+#screen-start h1{font-size:4.2rem;letter-spacing:-2px;font-weight:900;
+  background:linear-gradient(90deg,var(--gold),var(--pink),var(--cyan),var(--gold));background-size:300% auto;
+  -webkit-background-clip:text;background-clip:text;color:transparent;animation:shine 4s linear infinite;}
+@keyframes shine{to{background-position:300% center;}}
+#screen-start p{color:var(--muted);font-size:1.15rem;margin-top:8px;}
+.start-btn{margin-top:36px;background:var(--pink);color:#170B2E;font-weight:900;font-size:1.3rem;
+  padding:16px 46px;border-radius:50px;box-shadow:0 0 0 rgba(255,93,143,.6);animation:pulseBtn 1.8s ease-in-out infinite;}
+@keyframes pulseBtn{0%,100%{box-shadow:0 0 0 0 rgba(255,93,143,.55);transform:scale(1);}50%{box-shadow:0 0 0 16px rgba(255,93,143,0);transform:scale(1.04);}}
+.start-btn:hover{background:var(--gold);}
+.mode-row{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;}
+.start-btn.ai{background:var(--cyan);}
+/* ---- SELECT SCREEN ---- */
+#screen-select{max-width:720px;margin:0 auto;padding:32px 20px;text-align:center;}
+#screen-select h1{font-size:2.4rem;letter-spacing:-1px;color:var(--gold);}
+#screen-select p{color:var(--muted);margin-top:6px;}
+.avatars{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:12px;margin-top:24px;}
+.avatar-btn{background:var(--surface);border:2px solid transparent;border-radius:16px;padding:16px 8px;color:var(--text);transition:transform .15s;}
+.avatar-btn:hover:not(:disabled){transform:translateY(-4px) scale(1.03);border-color:var(--gold);}
+.avatar-btn:disabled{opacity:.25;cursor:not-allowed;}
+.avatar-btn .em{font-size:2.4rem;display:block;}
+.avatar-btn .nm{font-size:.85rem;margin-top:6px;display:block;}
+/* ---- BOARD ---- */
+#screen-board{max-width:1000px;margin:0 auto;padding:20px;}
+.theme-banner{text-align:center;background:linear-gradient(90deg,var(--pink),var(--gold));color:#170B2E;
+  font-weight:900;font-size:1.3rem;padding:10px;border-radius:14px;margin-bottom:14px;letter-spacing:.5px;}
+.players-row{display:flex;justify-content:space-between;gap:16px;}
+.player-panel{flex:1;background:var(--surface);border-radius:20px;padding:16px;position:relative;transition:outline .2s;}
+.player-panel.leading{outline:3px solid var(--gold);box-shadow:0 0 24px rgba(255,200,87,.4);}
+.p-head{display:flex;align-items:center;gap:10px;}
+.p-head .em{font-size:2rem;}
+.p-money{margin-left:auto;background:var(--surface2);padding:4px 12px;border-radius:14px;font-weight:800;color:var(--gold);}
+.bidflag{position:absolute;top:-18px;left:50%;transform:translateX(-50%);background:var(--pink);color:#170B2E;
+  font-weight:800;padding:4px 10px;border-radius:12px;opacity:0;transition:opacity .15s, transform .2s;}
+.bidflag.show{opacity:1;transform:translateX(-50%) translateY(-6px);}
+.slots{display:flex;flex-direction:column;gap:6px;margin-top:12px;}
+.slot{background:var(--surface2);border-radius:10px;padding:8px 10px;min-height:20px;font-size:.85rem;color:var(--muted);}
+.slot.filled{color:var(--text);}
+.slot .n{color:var(--gold);font-weight:800;margin-right:6px;}
+.center-stage{text-align:center;margin:20px 0;}
+.theme-chooser{background:var(--surface);border-radius:20px;padding:22px;animation:pop .3s ease;}
+.theme-grid{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:14px;max-width:640px;margin-left:auto;margin-right:auto;}
+.theme-btn{background:var(--surface2);color:var(--text);padding:10px 16px;border-radius:12px;font-weight:700;font-size:.9rem;transition:.15s;}
+.theme-btn:hover{background:var(--pink);color:#170B2E;transform:translateY(-2px);}
+.random-btn{margin-top:18px;background:var(--gold);color:#170B2E;font-weight:900;padding:12px 30px;border-radius:50px;font-size:1rem;}
+.random-btn:hover{background:var(--pink);}
+.wheel{font-size:3rem;margin:10px 0;}
+.item-card{background:var(--surface);border-radius:20px;padding:24px;display:inline-block;min-width:220px;animation:pop .3s ease;}
+@keyframes pop{from{transform:scale(.8);opacity:0;}to{transform:scale(1);opacity:1;}}
+.item-card .em{font-size:3.2rem;}
+.item-card .nm{font-size:1.4rem;font-weight:800;margin-top:6px;}
+.timerbar{height:8px;background:var(--surface2);border-radius:4px;margin:14px auto;max-width:300px;overflow:hidden;}
+.timerbar-fill{height:100%;background:var(--gold);width:100%;}
+.controls{display:flex;justify-content:space-between;align-items:center;margin-top:10px;color:var(--muted);font-size:.85rem;}
+.change-btn{background:var(--surface2);color:var(--text);font-weight:700;font-size:.8rem;padding:6px 14px;border-radius:20px;}
+.change-btn:hover:not(:disabled){background:var(--pink);color:#170B2E;}
+.change-btn:disabled{opacity:.5;cursor:default;}
+.result-msg{font-size:1.2rem;font-weight:800;color:var(--gold);min-height:1.6em;margin-top:10px;}
+/* ---- REVEAL ---- */
+#screen-reveal{max-width:800px;margin:0 auto;padding:40px 20px;text-align:center;min-height:100vh;}
+.spot-row{display:flex;justify-content:space-around;margin-top:20px;}
+.spotlight{background:radial-gradient(ellipse at top,rgba(255,200,87,.15),transparent 70%);padding:16px;border-radius:20px;flex:1;margin:0 8px;}
+.rate-row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 8px;border-radius:10px;font-size:1rem;transition:background .2s;}
+.rate-row.active{background:rgba(255,200,87,.18);box-shadow:0 0 14px rgba(255,200,87,.4);}
+.tag{display:block;color:var(--muted);font-size:.7rem;}
+.badge{min-width:54px;text-align:center;font-weight:900;background:var(--surface2);border-radius:10px;padding:4px 8px;font-variant-numeric:tabular-nums;}
+.badge.landed{animation:pop .4s ease;}
+.badge.hi{background:#2ecc71;color:#0B2A17;}
+.badge.mid{background:var(--gold);color:#170B2E;}
+.badge.lo{background:var(--pink);color:#170B2E;}
+.pct-count.winner{text-shadow:0 0 24px currentColor;transform:scale(1.15);transition:.4s;}
+.rev-row{padding:4px 0;font-size:1.05rem;}
+.rev-row.hidden-slot{color:var(--muted);opacity:.6;}
+.pop-in{animation:pop .5s ease;color:var(--gold);font-weight:800;}
+.pct-count-row{display:flex;justify-content:space-around;max-width:560px;margin:26px auto 0;}
+.pct-count{font-size:3rem;font-weight:900;font-variant-numeric:tabular-nums;}
+.pct-count .nm{display:block;font-size:1rem;color:var(--muted);font-weight:700;margin-bottom:4px;}
+.pct-count.a{color:var(--gold);}
+.pct-count.b{color:var(--pink);}
+</style>
+</head>
+<body>
+<div id="fx"></div>
+<div class="wrap">
+
+<div id="screen-start">
+  <h1>BID OFF!</h1>
+  <p>Two players. One wheel. Whoever knows best taste wins the bid.</p>
+  <div class="mode-row"><button class="start-btn" id="start-btn">👥 2 Players</button><button class="start-btn ai" id="start-ai-btn">🤖 Play vs AI</button></div>
+</div>
+
+<div id="screen-select" class="hidden">
+  <h1>Choose your player</h1>
+  <p id="select-sub">Player 1, pick your avatar</p>
+  <div class="avatars" id="avatar-grid"></div>
+</div>
+
+<div id="screen-board" class="hidden">
+  <div class="theme-banner" id="theme-banner"></div>
+  <div class="players-row">
+    <div class="player-panel" id="panel-0">
+      <div class="bidflag" id="bidflag-0"></div>
+      <div class="p-head"><span class="em" id="p0-em"></span><span id="p0-name"></span><span class="p-money" id="p0-money">$20</span></div>
+      <div class="slots" id="p0-slots"></div>
+    </div>
+    <div class="player-panel" id="panel-1">
+      <div class="bidflag" id="bidflag-1"></div>
+      <div class="p-head"><span class="em" id="p1-em"></span><span id="p1-name"></span><span class="p-money" id="p1-money">$20</span></div>
+      <div class="slots" id="p1-slots"></div>
+    </div>
+  </div>
+  <div class="center-stage">
+    <div class="theme-chooser hidden" id="theme-chooser">
+      <h3 id="chooser-title">Round complete! Choose the next theme:</h3>
+      <div class="theme-grid" id="theme-grid"></div>
+      <button class="random-btn" id="random-theme-btn">🎲 Random Theme</button>
+    </div>
+    <div class="wheel" id="wheel">🎡</div>
+    <div class="item-card hidden" id="item-card">
+      <div class="em" id="item-em"></div>
+      <div class="nm" id="item-nm"></div>
+    </div>
+    <div class="timerbar"><div class="timerbar-fill" id="timerfill"></div></div>
+    <div class="result-msg" id="result-msg"></div>
+    <div class="controls">
+      <div><b>P1:</b> W = bid &nbsp; S = pass</div>
+      <button class="change-btn" id="change-theme-btn">🔄 Change Theme</button>
+      <div id="p2-controls"><b>P2:</b> P = bid &nbsp; L = pass</div>
+    </div>
+  </div>
+</div>
+
+<div id="screen-reveal" class="hidden">
+  <h1 style="color:var(--gold)">🏆 The Reveal</h1>
+  <div class="spot-row">
+    <div class="spotlight" id="reveal-p0"></div>
+    <div class="spotlight" id="reveal-p1"></div>
+  </div>
+  <h3 style="margin-top:30px;">Who has the better taste?</h3>
+  <div class="pct-count-row">
+    <div class="pct-count a"><span class="nm" id="pctname-a"></span><span id="pctnum-a">0.0%</span></div>
+    <div class="pct-count b"><span class="nm" id="pctname-b"></span><span id="pctnum-b">0.0%</span></div>
+  </div>
+  <div class="result-msg" id="final-verdict" style="font-size:1.5rem;margin-top:16px;"></div>
+</div>
+
+</div>
+<script>
+// ---- background floating particles ----
+const fx=document.getElementById('fx');
+const emojis=['✨','🎉','💰','🎲','⭐'];
+for(let i=0;i<18;i++){
+  const s=document.createElement('span');
+  s.className='spark'; s.textContent=emojis[i%emojis.length];
+  s.style.left=Math.random()*100+'%';
+  s.style.animationDuration=(10+Math.random()*10)+'s';
+  s.style.animationDelay=(Math.random()*10)+'s';
+  fx.appendChild(s);
+}
+
+let aiMode=false;
+document.getElementById('start-ai-btn').onclick=()=>{aiMode=true;goSelect();};
+document.getElementById('start-btn').onclick=()=>{aiMode=false;goSelect();};
+function goSelect(){
+  document.getElementById('select-sub').textContent=aiMode?'Pick your avatar (the AI picks its own)':'Player 1, pick your avatar';
+  document.getElementById('screen-start').classList.add('hidden');
+  document.getElementById('screen-select').classList.remove('hidden');
+}
+
+const AVATARS=[{n:"Seb",e:"🧑‍💼"},{n:"Kendly",e:"👩‍🦱"},{n:"Kalina",e:"👸"},{n:"Brundan",e:"🧔"},{n:"Tree",e:"🌳"},{n:"Gi-Hun",e:"🎭"},{n:"Phoenix",e:"🔥"}];
+
+const CATEGORIES=[
+{name:"Most Nostalgic Game",pool:[["Minecraft","⛏️"],["Roblox","🧱"],["Fortnite","🍕"],["Mario Kart","🏎️"],["Pokémon","⚡"],["Among Us","🚀"],["Club Penguin","🐧"],["Flappy Bird","🐤"],["Temple Run","🏃"],["Angry Birds","🐦"],["Subway Surfers","🚇"],["Candy Crush","🍬"],["Animal Crossing","🍃"],["The Sims","🏠"],["Tetris","🧩"],["Call of Duty","🔫"]]},
+{name:"Best Kids TV Show",pool:[["SpongeBob","🧽"],["Avatar: TLA","🌊"],["Adventure Time","🎒"],["Phineas & Ferb","🔧"],["Teen Titans","⭐"],["Ben 10","⌚"],["Regular Show","☕"],["Gravity Falls","🌲"],["Dora the Explorer","🗺️"],["Powerpuff Girls","💥"],["Rugrats","👶"],["Tom and Jerry","🐱"],["Ed, Edd n Eddy","🍬"],["Danny Phantom","👻"],["Codename: Kids Next Door","🚀"],["Arthur","🐻"]]},
+{name:"Best Animated Movie",pool:[["Shrek","🟢"],["Toy Story","🤠"],["Spirited Away","🐉"],["The Incredibles","🦸"],["Up","🎈"],["Coco","💀"],["Zootopia","🐰"],["How to Train Your Dragon","🐲"],["Finding Nemo","🐠"],["Kung Fu Panda","🐼"],["Frozen","❄️"],["Moana","🌊"],["Wreck-It Ralph","🎮"],["Ratatouille","🐭"],["Despicable Me","🍌"],["The Lion King","🦁"]]},
+{name:"Best Food",pool:[["Pizza","🍕"],["Sushi","🍣"],["Tacos","🌮"],["Burgers","🍔"],["Ramen","🍜"],["Fried Chicken","🍗"],["Pasta","🍝"],["BBQ","🍖"],["Curry","🍛"],["Dumplings","🥟"],["Pho","🍲"],["Falafel","🧆"],["Steak","🥩"],["Pad Thai","🍤"],["Burritos","🌯"],["Bibimbap","🍚"]]},
+{name:"Best Sport",pool:[["Soccer","⚽"],["Basketball","🏀"],["Tennis","🎾"],["Swimming","🏊"],["Cricket","🏏"],["Volleyball","🏐"],["Boxing","🥊"],["Rugby","🏉"],["Golf","⛳"],["Baseball","⚾"],["Surfing","🏄"],["Skateboarding","🛹"],["Ice Hockey","🏒"],["Track & Field","🏃"],["Table Tennis","🏓"],["Climbing","🧗"]]},
+{name:"Best Superhero",pool:[["Spider-Man","🕷️"],["Batman","🦇"],["Iron Man","🤖"],["Wonder Woman","⭐"],["Superman","🦸"],["The Flash","⚡"],["Black Panther","🐆"],["Deadpool","🗡️"],["Captain America","🛡️"],["Thor","🔨"],["Hulk","💚"],["Black Widow","🕸️"],["Doctor Strange","🔮"],["Aquaman","🔱"],["Green Lantern","💚"],["Ms. Marvel","✨"]]},
+{name:"Best Music Genre",pool:[["Pop","🎤"],["Hip-Hop","🎧"],["Rock","🎸"],["EDM","🎛️"],["Jazz","🎷"],["K-Pop","💃"],["Country","🤠"],["R&B","🎹"],["Reggae","🌴"],["Metal","🤘"],["Afrobeats","🥁"],["Latin Pop","💃"],["Indie","🎙️"],["Classical","🎻"],["Punk","🎸"],["Soul","🎶"]]},
+{name:"Best Pizza Topping",pool:[["Pepperoni","🍕"],["Mushroom","🍄"],["Pineapple","🍍"],["Extra Cheese","🧀"],["BBQ Chicken","🍗"],["Olives","🫒"],["Sausage","🌭"],["Veggie","🥦"],["Bacon","🥓"],["Jalapeño","🌶️"],["Onion","🧅"],["Spinach","🥬"],["Ham","🍖"],["Anchovies","🐟"],["Buffalo Chicken","🔥"],["Garlic","🧄"]]},
+{name:"Best Vacation Spot",pool:[["Bali","🏝️"],["Paris","🗼"],["Tokyo","🗾"],["New York","🗽"],["Maldives","🏖️"],["Rome","🏛️"],["Iceland","🧊"],["Bahamas","⛵"],["Sydney","🦘"],["Dubai","🏙️"],["Santorini","🇬🇷"],["Cancun","🌴"],["London","🎡"],["Cape Town","🏔️"],["Rio de Janeiro","🎉"],["Swiss Alps","🏔️"]]},
+{name:"Best Ice Cream Flavor",pool:[["Chocolate","🍫"],["Vanilla","🍦"],["Strawberry","🍓"],["Mint Choc Chip","🌿"],["Cookies & Cream","🍪"],["Salted Caramel","🧂"],["Pistachio","🥜"],["Rocky Road","🪨"],["Mango","🥭"],["Coffee","☕"],["Coconut","🥥"],["Bubblegum","🍬"],["Peanut Butter","🥜"],["Lemon Sorbet","🍋"],["Butter Pecan","🌰"],["Neapolitan","🎨"]]},
+{name:"Best Fast Food Chain",pool:[["McDonald's","🍟"],["KFC","🍗"],["Subway","🥪"],["Taco Bell","🌮"],["Chick-fil-A","🐔"],["Wendy's","🍔"],["Domino's","🍕"],["In-N-Out","🍔"],["Burger King","👑"],["Popeyes","🍗"],["Five Guys","🍔"],["Shake Shack","🥤"],["Panda Express","🐼"],["Chipotle","🌯"],["Sonic","🛼"],["Dairy Queen","🍦"]]},
+{name:"Best Video Game Console",pool:[["PlayStation","🎮"],["Xbox","🎮"],["Nintendo Switch","🕹️"],["Gaming PC","🖥️"],["Game Boy","🎮"],["Wii","🎮"],["Sega Genesis","🕹️"],["Atari","👾"],["PS Vita","🎮"],["Nintendo 64","🕹️"],["GameCube","🎮"],["Nintendo DS","📱"],["Steam Deck","🖥️"],["Dreamcast","🕹️"],["Xbox 360","🎮"],["PSP","🎮"]]},
+{name:"Best Board Game",pool:[["Monopoly","🎩"],["Uno","🃏"],["Chess","♟️"],["Scrabble","🔤"],["Jenga","🧱"],["Risk","🗺️"],["Clue","🔍"],["Battleship","🚢"],["Catan","🌾"],["Codenames","🕵️"],["Connect Four","🔴"],["Sorry!","😅"],["Trivial Pursuit","🧠"],["Guess Who?","❓"],["Checkers","⚫"],["Twister","🌀"]]},
+{name:"Best Meme",pool:[["Distracted Boyfriend","📸"],["Doge","🐶"],["Rickroll","🎵"],["This Is Fine","🔥"],["Grumpy Cat","😾"],["Nyan Cat","🌈"],["Success Kid","👶"],["Stonks","📈"],["Woman Yelling at Cat","🐱"],["Drake Hotline Bling","☎️"],["Galaxy Brain","🧠"],["Shiba Wow","🐕"],["Expanding Brain","💡"],["Roll Safe","🤔"],["Change My Mind","🪑"],["Surprised Pikachu","⚡"]]},
+{name:"Best Halloween Costume",pool:[["Ghost","👻"],["Vampire","🧛"],["Witch","🧙‍♀️"],["Zombie","🧟"],["Superhero","🦸"],["Pirate","🏴‍☠️"],["Skeleton","💀"],["Princess","👸"],["Mummy","🪦"],["Werewolf","🐺"],["Clown","🤡"],["Dinosaur","🦖"],["Astronaut","👨‍🚀"],["Devil","😈"],["Fairy","🧚"],["Robot","🤖"]]},
+{name:"Best Car Brand",pool:[["Toyota","🚗"],["Ferrari","🏎️"],["Tesla","⚡"],["BMW","🚙"],["Honda","🚘"],["Ford","🛻"],["Lamborghini","🏎️"],["Porsche","🚗"],["Audi","🚙"],["Jeep","🚙"],["Subaru","🚗"],["Mercedes-Benz","🚘"],["Mazda","🚗"],["Chevrolet","🚙"],["Nissan","🚗"],["Volkswagen","🚗"]]},
+{name:"Best School Subject",pool:[["Math","➗"],["Art","🎨"],["Science","🔬"],["History","📜"],["Music","🎵"],["PE","🏃"],["Drama","🎭"],["Geography","🌍"],["English","📖"],["Computer Science","💻"],["Biology","🧬"],["Chemistry","🧪"],["Woodshop","🔨"],["Foreign Language","🗣️"],["Home Economics","🍳"],["Recess","🛝"]]}
+];
+// How well each pick fits its theme (out of 10), in the same order as each pool above
+const SC={
+"Most Nostalgic Game":[9,7,6,9,10,5,10,7,8,8,7,6,8,8,9,6],
+"Best Kids TV Show":[10,10,8,9,7,8,7,9,7,8,8,8,7,6,7,8],
+"Best Animated Movie":[9,10,10,9,9,8,8,9,9,8,7,7,7,9,7,10],
+"Best Food":[9,8,9,9,8,8,9,8,8,8,7,6,8,7,7,7],
+"Best Sport":[10,9,8,7,8,6,7,8,5,7,7,6,8,7,5,6],
+"Best Superhero":[10,10,9,8,9,7,8,7,8,8,7,7,7,5,5,6],
+"Best Music Genre":[8,9,9,7,8,7,6,8,7,7,7,7,6,8,6,8],
+"Best Pizza Topping":[10,7,5,9,7,5,8,6,8,6,5,4,6,3,7,6],
+"Best Vacation Spot":[9,9,9,8,10,8,8,8,8,7,9,7,7,8,8,9],
+"Best Ice Cream Flavor":[9,8,8,7,9,9,7,8,6,6,5,6,7,5,6,6],
+"Best Fast Food Chain":[9,8,6,7,9,7,7,9,7,8,8,7,6,7,5,7],
+"Best Video Game Console":[9,8,9,8,9,9,7,6,5,9,8,8,6,6,8,6],
+"Best Board Game":[8,8,10,7,7,8,8,7,9,8,6,5,6,6,6,5],
+"Best Meme":[9,9,10,9,7,8,6,7,9,8,7,5,6,6,6,9],
+"Best Halloween Costume":[7,8,8,8,6,7,8,5,7,8,8,5,4,7,4,4],
+"Best Car Brand":[8,10,8,8,7,7,10,9,7,7,6,9,6,6,6,6],
+"Best School Subject":[6,8,8,6,7,8,6,5,6,8,6,6,7,5,6,10]
+};
+CATEGORIES.forEach(c=>c.pool.forEach((it,i)=>it[2]=SC[c.name][i]));
+
+let players=[{name:null,em:null,money:20,slots:[]},{name:null,em:null,money:20,slots:[]}];
+let pickStep=0;
+
+// ---- SELECT SCREEN ----
+const grid=document.getElementById('avatar-grid');
+function renderAvatars(){
+  grid.innerHTML='';
+  AVATARS.forEach(a=>{
+    const used=players.some(p=>p.name===a.n);
+    const b=document.createElement('button');
+    b.className='avatar-btn'; b.disabled=used;
+    b.innerHTML=`<span class="em">${a.e}</span><span class="nm">${a.n}</span>`;
+    b.onclick=()=>pickAvatar(a);
+    grid.appendChild(b);
+  });
+}
+function pickAvatar(a){
+  players[pickStep].name=a.n; players[pickStep].em=a.e;
+  pickStep++;
+  if(aiMode && pickStep===1){
+    const opts=AVATARS.filter(x=>x.n!==a.n);
+    const ai=opts[Math.floor(Math.random()*opts.length)];
+    players[1].name=ai.n+' (AI)'; players[1].em=ai.e;
+    document.getElementById('p2-controls').innerHTML='<b>AI 🤖</b> plays automatically';
+    return startBoard();
+  }
+  if(pickStep<2){
+    document.getElementById('select-sub').textContent=`Player 2, pick your avatar`;
+    renderAvatars();
+  } else {
+    startBoard();
+  }
+}
+renderAvatars();
+
+// ---- BOARD SETUP ----
+function startBoard(){
+  document.getElementById('screen-select').classList.add('hidden');
+  document.getElementById('screen-board').classList.remove('hidden');
+  [0,1].forEach(i=>{
+    document.getElementById(`p${i}-em`).textContent=players[i].em;
+    document.getElementById(`p${i}-name`).textContent=' '+players[i].name+' ';
+  });
+  updatePanels();
+  newRound();
+}
+function updatePanels(){
+  [0,1].forEach(i=>{
+    document.getElementById(`p${i}-money`).textContent='$'+players[i].money;
+    const slotsEl=document.getElementById(`p${i}-slots`);
+    slotsEl.innerHTML='';
+    for(let s=0;s<4;s++){
+      const item=players[i].slots[s];
+      const d=document.createElement('div');
+      d.className='slot'+(item?' filled':'');
+      d.innerHTML=`<span class="n">${s+1}.</span>${item?`${item.em} ${item.name} <span style="color:var(--muted)">($${item.price})</span>`:'empty'}`;
+      slotsEl.appendChild(d);
+    }
+    document.getElementById(`panel-${i}`).classList.remove('leading');
+  });
+}
+
+// ---- ROUND STATE (a "round" = one locked-in theme; items are drawn from a bag that
+// reshuffles itself when empty, so the theme never runs out and never auto-switches) ----
+function hash(s){let h=0;for(let c of s)h=(h*31+c.charCodeAt(0))>>>0;return (h%10)+1;}
+let bidState={active:false,item:null,bid:0,leader:null,lastBidder:null,timer:null,timeLeft:15,canBid:[true,true]};
+let currentRound={category:null,catRef:null,bag:[],drawCount:0};
+let wantThemeChange=false;
+
+function shuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+function newRound(){
+  const full=[players[0].slots.length>=4, players[1].slots.length>=4];
+  if(full[0]||full[1]){ return doReveal(full[0]?0:1); }
+  showThemeChooser();
+}
+
+function showThemeChooser(){
+  document.getElementById('wheel').textContent='🎡';
+  document.getElementById('theme-banner').textContent='Pick the next theme';
+  document.getElementById('item-card').classList.add('hidden');
+  document.getElementById('result-msg').textContent='';
+  resetChangeBtn();
+  const g=document.getElementById('theme-grid'); g.innerHTML='';
+  CATEGORIES.forEach(cat=>{
+    const b=document.createElement('button');
+    b.className='theme-btn'; b.textContent=cat.name;
+    b.onclick=()=>beginRound(cat);
+    g.appendChild(b);
+  });
+  document.getElementById('theme-chooser').classList.remove('hidden');
+}
+document.getElementById('random-theme-btn').onclick=()=>beginRound(CATEGORIES[Math.floor(Math.random()*CATEGORIES.length)]);
+document.getElementById('change-theme-btn').onclick=()=>{
+  wantThemeChange=true;
+  const b=document.getElementById('change-theme-btn');
+  b.textContent='Changing after this item ⏳'; b.disabled=true;
+};
+
+function resetChangeBtn(){
+  wantThemeChange=false;
+  const b=document.getElementById('change-theme-btn');
+  b.textContent='🔄 Change Theme'; b.disabled=false;
+}
+
+function beginRound(cat){
+  document.getElementById('theme-chooser').classList.add('hidden');
+  currentRound={category:cat.name,catRef:cat,bag:shuffle(cat.pool),drawCount:0};
+  resetChangeBtn();
+  document.getElementById('wheel').textContent='🎡';
+  document.getElementById('theme-banner').textContent='Spinning...';
+  setTimeout(()=>{
+    document.getElementById('wheel').textContent='📋';
+    nextItem();
+  },800);
+}
+
+function nextItem(){
+  const full=[players[0].slots.length>=4, players[1].slots.length>=4];
+  if(full[0]||full[1]){ return doReveal(full[0]?0:1); }
+  if(currentRound.bag.length===0){
+    let fresh=shuffle(currentRound.catRef.pool);
+    if(currentRound.lastDrawn && fresh[fresh.length-1][0]===currentRound.lastDrawn){
+      fresh.unshift(fresh.pop());
+    }
+    currentRound.bag=fresh;
+  }
+  const drawn=currentRound.bag.pop();
+  currentRound.lastDrawn=drawn[0];
+  const item={name:drawn[0],em:drawn[1],score:drawn[2]};
+  currentRound.drawCount++;
+  document.getElementById('theme-banner').textContent=
+    `🎯 Theme: ${currentRound.category}  —  Item #${currentRound.drawCount}`;
+  const canBid=[players[0].money>0 && players[0].slots.length<4, players[1].money>0 && players[1].slots.length<4];
+  bidState={active:true,item,bid:0,leader:null,lastBidder:null,canBid,timeLeft:15,noBidPass:[false,false]};
+
+  document.getElementById('item-em').textContent=item.em;
+  document.getElementById('item-nm').textContent=item.name;
+  document.getElementById('item-card').classList.remove('hidden');
+  document.getElementById('result-msg').textContent='';
+  [0,1].forEach(hideFlag);
+  startTimer();
+  aiThink();
+}
+
+// ---- AI opponent (player index 1) ----
+function aiMaxBid(item){
+  const me=players[1];
+  const left=4-me.slots.length;
+  const value=item.score+Math.round((Math.random()-0.5)*2); // its taste, with a bit of noise
+  const cap=me.money-(left-1); // keep roughly $1 per remaining slot
+  return Math.max(0,Math.min(value,cap));
+}
+function aiThink(){
+  if(!aiMode||!bidState.active) return;
+  const st=bidState;
+  if(st.aiMax===undefined) st.aiMax=aiMaxBid(st.item);
+  const delay=st.lastBidder===null ? 1500+Math.random()*4500 : 700+Math.random()*1000;
+  clearTimeout(st.aiTimeout);
+  st.aiTimeout=setTimeout(()=>{
+    if(st!==bidState||!st.active||st.lastBidder===1) return;
+    if(st.lastBidder===null){
+      if(st.aiMax>=1) attemptBid(1); else attemptPass(1);
+    } else if(st.bid+1<=st.aiMax && st.canBid[1]) attemptBid(1);
+    else attemptPass(1);
+  },delay);
+}
+
+function startTimer(){
+  bidState.timeLeft=15;
+  const fill=document.getElementById('timerfill');
+  fill.style.transition='none'; fill.style.width='100%';
+  clearInterval(bidState.timer);
+  bidState.timer=setInterval(()=>{
+    bidState.timeLeft-=0.1;
+    fill.style.transition='width .1s linear';
+    fill.style.width=Math.max(0,(bidState.timeLeft/15*100))+'%';
+    if(bidState.timeLeft<=0){
+      clearInterval(bidState.timer);
+      endItem(null);
+    }
+  },100);
+}
+
+function hideFlag(i){ document.getElementById(`bidflag-${i}`).classList.remove('show'); }
+function showFlag(i,amount){
+  const f=document.getElementById(`bidflag-${i}`);
+  f.textContent='💰 $'+amount;
+  f.classList.add('show');
+}
+
+function attemptBid(i){
+  if(!bidState.active) return;
+  if(!bidState.canBid[i]) return;
+  if(bidState.lastBidder===i) return;
+  if(players[i].money < bidState.bid+1) return;
+  clearInterval(bidState.timer);
+  bidState.bid+=1;
+  bidState.leader=i; bidState.lastBidder=i;
+  bidState.noBidPass=[false,false];
+  showFlag(i,bidState.bid);
+  document.getElementById(`panel-${i}`).classList.add('leading');
+  document.getElementById(`panel-${1-i}`).classList.remove('leading');
+  document.getElementById('timerfill').style.width='100%';
+  if(i===0) aiThink();
+}
+function attemptPass(i){
+  if(!bidState.active) return;
+  if(bidState.lastBidder===null){
+    bidState.noBidPass[i]=true;
+    if(bidState.noBidPass[0] && bidState.noBidPass[1]){
+      endItem(null);
+    } else {
+      document.getElementById('result-msg').textContent=`${players[i].name} wants to skip...`;
+    }
+    return;
+  }
+  if(bidState.lastBidder===i) return;
+  endItem(bidState.leader);
+}
+function endItem(winner){
+  bidState.active=false;
+  clearTimeout(bidState.aiTimeout);
+  clearInterval(bidState.timer);
+  if(winner===null){
+    document.getElementById('result-msg').textContent="⏱️ Nobody bid — item skipped!";
+  } else {
+    players[winner].money-=bidState.bid;
+    players[winner].slots.push({name:bidState.item.name,em:bidState.item.em,price:bidState.bid,cat:currentRound.category,score:bidState.item.score});
+    document.getElementById('result-msg').textContent=`${players[winner].em} ${players[winner].name} wins "${bidState.item.name}" for $${bidState.bid}!`;
+    updatePanels();
+  }
+  setTimeout(()=>{ wantThemeChange ? newRound() : nextItem(); },1600);
+}
+
+document.addEventListener('keydown',e=>{
+  const k=e.key.toLowerCase();
+  if(k==='w') attemptBid(0);
+  if(k==='s') attemptPass(0);
+  if(!aiMode && k==='p') attemptBid(1);
+  if(!aiMode && k==='l') attemptPass(1);
+});
+
+// ---- REVEAL ----
+function doReveal(finishedIdx){
+  const other=1-finishedIdx;
+  const needed=4-players[other].slots.length;
+  const cat=CATEGORIES.find(c=>c.name===currentRound.category) || CATEGORIES[0];
+  const taken=new Set([...players[0].slots,...players[1].slots].map(s=>s.name));
+  let avail=shuffle(cat.pool.filter(it=>!taken.has(it[0])));
+  const leftovers=[];
+  for(let n=0;n<needed;n++){
+    const item=avail[n] || cat.pool[Math.floor(Math.random()*cat.pool.length)];
+    leftovers.push({name:item[0],em:item[1],price:0,cat:cat.name,score:item[2]});
+  }
+  document.getElementById('screen-board').classList.add('hidden');
+  document.getElementById('screen-reveal').classList.remove('hidden');
+  // draw both lists: won items now, leftover slots as "?" until revealed
+  const shown=[players[0].slots.length,players[1].slots.length];
+  const rowHTML=it=>`<div class="rev-row">${it.em} ${it.name}</div>`;
+  const draw=()=>[0,1].forEach(i=>{
+    const el=document.getElementById(`reveal-p${i}`);
+    let rows=players[i].slots.slice(0,shown[i]).map(rowHTML).join('');
+    if(i===other) for(let k=shown[i];k<4;k++) rows+='<div class="rev-row hidden-slot">❓ ???</div>';
+    el.innerHTML=`<div style="font-size:2.5rem">${players[i].em}</div><h3>${players[i].name}</h3>`+rows;
+  });
+  draw();
+  const status=document.getElementById('final-verdict');
+  if(needed>0) status.textContent=`🎁 Revealing ${players[other].name}'s leftover items...`;
+  let step=0;
+  function revealNext(){
+    if(step<leftovers.length){
+      players[other].slots.push(leftovers[step]);
+      shown[other]++; step++;
+      draw();
+      const last=document.getElementById(`reveal-p${other}`).querySelectorAll('.rev-row');
+      last[last.length-1-(4-shown[other])].classList.add('pop-in');
+      setTimeout(revealNext,1400);
+    } else {
+      status.textContent='';
+      startRating();
+    }
+  }
+  setTimeout(revealNext,900);
+  function startRating(){
+    const status=document.getElementById('final-verdict');
+    status.textContent='🎯 Rating every pick on how well it fits its theme...';
+    document.getElementById('pctname-a').textContent=players[0].name;
+    document.getElementById('pctname-b').textContent=players[1].name;
+    const numEl=i=>document.getElementById(i?'pctnum-b':'pctnum-a');
+    [0,1].forEach(i=>{
+      numEl(i).textContent='0 / 40';
+      document.getElementById(`reveal-p${i}`).innerHTML=
+        `<div style="font-size:2.5rem">${players[i].em}</div><h3>${players[i].name}</h3>`+
+        players[i].slots.map((it,k)=>`<div class="rate-row" id="rr-${i}-${k}"><span>${it.em} ${it.name}<small class="tag">${it.cat}</small></span><span class="badge" id="bd-${i}-${k}">–</span></div>`).join('');
+    });
+    const totals=[0,0];
+    const tween=(i,from,to)=>{
+      const t0=performance.now();
+      (function f(n){const t=Math.min(1,(n-t0)/500);numEl(i).textContent=Math.round(from+(to-from)*t)+' / 40';if(t<1)requestAnimationFrame(f);})(t0);
+    };
+    let k=0;
+    function rateRow(){
+      if(k>=4) return finish();
+      const kk=k;
+      [0,1].forEach(i=>document.getElementById(`rr-${i}-${kk}`).classList.add('active'));
+      let ticks=0;
+      const roll=setInterval(()=>{
+        ticks++;
+        [0,1].forEach(i=>document.getElementById(`bd-${i}-${kk}`).textContent=(1+Math.floor(Math.random()*10))+'/10');
+        if(ticks>=14){
+          clearInterval(roll);
+          [0,1].forEach(i=>{
+            const sc=players[i].slots[kk].score;
+            const b=document.getElementById(`bd-${i}-${kk}`);
+            b.textContent=sc+'/10';
+            b.classList.add('landed',sc>=8?'hi':sc<=5?'lo':'mid');
+            document.getElementById(`rr-${i}-${kk}`).classList.remove('active');
+            tween(i,totals[i],totals[i]+sc); totals[i]+=sc;
+          });
+          k++; setTimeout(rateRow,1000);
+        }
+      },70);
+    }
+    function finish(){
+      const [a,b2]=totals;
+      status.textContent = a===b2 ? `It's a perfect tie at ${a}! 🤝` : `${a>b2?players[0].em+' '+players[0].name:players[1].em+' '+players[1].name} wins ${Math.max(a,b2)} to ${Math.min(a,b2)}! 🏆`;
+      if(a!==b2) numEl(a>b2?0:1).classList.add('winner');
+    }
+    setTimeout(rateRow,800);
+  }
+}
+</script>
+</body>
+</html>
